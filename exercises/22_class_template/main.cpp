@@ -1,6 +1,6 @@
 ﻿#include "../exercise.h"
 #include <cstring>
-// READ: 类模板 <https://zh.cppreference.com/w/cpp/language/class_template>
+// READ: 类模板 <https://cppreference.com/w/cpp/language/class_template>
 
 template<class T>
 struct Tensor4D {
@@ -10,6 +10,10 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        for (int i = 0; i < 4; i++) {
+            size *= shape_[i];
+        }
+        std::memcpy(shape, shape_, 4 * sizeof(unsigned int));
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -28,6 +32,29 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
+        unsigned int stride_this[4] = {shape[2] * shape[1] * shape[3], shape[2] * shape[3], shape[3], 1};
+        unsigned int stride_other[4] = {others.shape[2] * others.shape[1] * others.shape[3], others.shape[2] * others.shape[3], others.shape[3], 1};
+        ;
+
+        for (int i = 0; i < std::max(shape[3], others.shape[3]); i++){
+            int ithis = shape[3] != 1? i : 0;
+            int iother = others.shape[3] != 1? i : 0;
+            for (int j = 0; j < std::max(shape[2], others.shape[2]); j++) {
+                int jthis = shape[2] != 1? j : 0;
+                int jother = others.shape[2] != 1? j : 0;
+                for (int p = 0; p < std::max(shape[1], others.shape[1]); p++){
+                    int pthis = shape[1] != 1? p : 0;
+                    int pother = others.shape[1] != 1? p : 0;
+                    for (int q = 0; q < std::max(shape[0], others.shape[0]); q++){
+                        int qthis = shape[0] != 1? q : 0;
+                        int qother = others.shape[0] != 1? q : 0;
+                        data[ithis * stride_this[3] + jthis * stride_this[2] + pthis * stride_this[1] + qthis * stride_this[0]] += 
+                        others.data[iother * stride_other[3] + jother * stride_other[2] + pother * stride_other[1] + qother * stride_other[0]];
+                    }
+                }
+            }
+        }
+
         return *this;
     }
 };
